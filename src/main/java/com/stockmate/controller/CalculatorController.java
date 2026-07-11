@@ -6,12 +6,14 @@ import com.stockmate.dto.TrancheForm;
 import com.stockmate.model.Portfolio;
 import com.stockmate.model.PortfolioItem;
 import com.stockmate.model.User;
-import com.stockmate.repository.PortfolioItemRepository;
-import com.stockmate.repository.PortfolioRepository;
 import com.stockmate.service.CalculatorService;
+import com.stockmate.service.PortfolioService;
 import com.stockmate.service.StockPriceService;
 import com.stockmate.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,39 +22,29 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
 
 @Controller
+@RequiredArgsConstructor
+@Tag(name = "Calculator", description = "Endpoints for averaging down and target sell simulation")
 public class CalculatorController {
 
     private final CalculatorService calculatorService;
     private final StockPriceService stockPriceService;
     private final UserService userService;
-    private final PortfolioRepository portfolioRepository;
-    private final PortfolioItemRepository portfolioItemRepository;
-
-    public CalculatorController(
-            CalculatorService calculatorService,
-            StockPriceService stockPriceService,
-            UserService userService,
-            PortfolioRepository portfolioRepository,
-            PortfolioItemRepository portfolioItemRepository
-    ) {
-        this.calculatorService = calculatorService;
-        this.stockPriceService = stockPriceService;
-        this.userService = userService;
-        this.portfolioRepository = portfolioRepository;
-        this.portfolioItemRepository = portfolioItemRepository;
-    }
+    private final PortfolioService portfolioService;
 
     @GetMapping("/")
+    @Operation(summary = "Show Calculator", description = "Displays the calculator page")
     public String showCalculator(
             @RequestParam(value = "stockCode", required = false) String stockCode,
             @RequestParam(value = "currentLots", required = false) Integer currentLots,
             @RequestParam(value = "currentAvgPrice", required = false) BigDecimal currentAvgPrice,
+            Principal principal,
             Model model
     ) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
         CalculatorForm form = new CalculatorForm();
         if (stockCode != null) {
             form.setStockCode(stockCode);
@@ -64,13 +56,22 @@ public class CalculatorController {
             form.setCurrentAvgPrice(currentAvgPrice);
         }
         model.addAttribute("calculatorForm", form);
+
+        if (principal != null) {
+            User user = userService.findByUsername(principal.getName()).orElse(null);
+            if (user != null) {
+                model.addAttribute("portfolios", portfolioService.getPortfoliosByUser(user));
+            }
+        }
         return "calculator";
     }
 
     @PostMapping("/")
+    @Operation(summary = "Calculate Average Down", description = "Performs calculation and displays results")
     public String calculateAverageDown(
             @Valid @ModelAttribute("calculatorForm") CalculatorForm form,
             BindingResult bindingResult,
+            Principal principal,
             Model model
     ) {
         // Cross-field validation for multi-step tranches
@@ -103,17 +104,32 @@ public class CalculatorController {
         }
 
         if (bindingResult.hasErrors()) {
+            if (principal != null) {
+                User user = userService.findByUsername(principal.getName()).orElse(null);
+                if (user != null) {
+                    model.addAttribute("portfolios", portfolioService.getPortfoliosByUser(user));
+                }
+            }
             return "calculator";
         }
 
         CalculatorResult result = calculatorService.calculate(form);
         model.addAttribute("result", result);
+        
+        if (principal != null) {
+            User user = userService.findByUsername(principal.getName()).orElse(null);
+            if (user != null) {
+                model.addAttribute("portfolios", portfolioService.getPortfoliosByUser(user));
+            }
+        }
         return "calculator";
     }
 
     @PostMapping("/portfolio/save")
+    @Operation(summary = "Save Result to Portfolio", description = "Saves the calculator stock inputs to user portfolio")
     public String saveToPortfolio(
             @ModelAttribute CalculatorForm form,
+            @RequestParam(value = "portfolioId", required = false) Long portfolioId,
             Principal principal,
             RedirectAttributes redirectAttributes
     ) {
@@ -136,40 +152,23 @@ public class CalculatorController {
         String username = principal.getName();
         User user = userService.findByUsername(username).orElseThrow();
 
-        // Get or create first portfolio
-        Portfolio portfolio = portfolioRepository.findByUser(user).stream()
-                .findFirst()
-                .orElseGet(() -> portfolioRepository.save(new Portfolio("Portfolio Utama", user)));
+        Portfolio portfolio;
+        if (portfolioId != null) {
+            portfolio = portfolioService.getPortfolioById(portfolioId)
+                    .filter(p -> p.getUser().getId().equals(user.getId()))
+                    .orElseGet(() -> portfolioService.createPortfolio("Portfolio Utama", user));
+        } else {
+            // Get or create first portfolio
+            portfolio = portfolioService.getPortfoliosByUser(user).stream()
+                    .findFirst()
+                    .orElseGet(() -> portfolioService.createPortfolio("Portfolio Utama", user));
+        }
 
         String normalizedCode = stockPriceService.normalizeTicker(form.getStockCode());
 
-        // Find existing stock in portfolio or create new
-        PortfolioItem item = portfolio.getItems().stream()
-                .filter(i -> i.getStockCode().equalsIgnoreCase(normalizedCode))
-                .findFirst()
-                .orElseGet(() -> {
-                    PortfolioItem newItem = new PortfolioItem();
-                    newItem.setStockCode(normalizedCode);
-                    newItem.setPortfolio(portfolio);
-                    return newItem;
-                });
+        portfolioService.addOrUpdateItem(portfolio, normalizedCode, form.getCurrentLots(), form.getCurrentAvgPrice());
 
-        item.setCurrentLots(form.getCurrentLots());
-        item.setCurrentAvgPrice(form.getCurrentAvgPrice());
-        portfolioItemRepository.save(item);
-
-        redirectAttributes.addFlashAttribute("successMsg", "Saham " + normalizedCode + " berhasil disimpan ke portfolio!");
+        redirectAttributes.addFlashAttribute("successMsg", "Saham " + normalizedCode + " berhasil disimpan ke portfolio '" + portfolio.getName() + "'!");
         return "redirect:/dashboard";
-    }
-
-    @GetMapping("/api/stock/price")
-    @ResponseBody
-    public ResponseEntity<?> getStockPrice(@RequestParam("ticker") String ticker) {
-        BigDecimal price = stockPriceService.fetchCurrentPrice(ticker);
-        String normalized = stockPriceService.normalizeTicker(ticker);
-        Map<String, Object> response = new HashMap<>();
-        response.put("ticker", normalized);
-        response.put("price", price);
-        return ResponseEntity.ok(response);
     }
 }
