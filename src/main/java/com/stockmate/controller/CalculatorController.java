@@ -54,6 +54,9 @@ public class CalculatorController {
             Principal principal,
             Model model
     ) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
         CalculatorForm form = new CalculatorForm();
         if (stockCode != null) {
             form.setStockCode(stockCode);
