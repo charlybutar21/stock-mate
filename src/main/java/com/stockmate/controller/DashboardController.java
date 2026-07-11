@@ -17,6 +17,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.math.RoundingMode;
 
 @Controller
 public class DashboardController {
@@ -38,6 +42,32 @@ public class DashboardController {
         this.stockPriceService = stockPriceService;
     }
 
+    public static class CombinedItem {
+        private String stockCode;
+        private int totalLots;
+        private BigDecimal averagePrice;
+
+        public CombinedItem(String stockCode, int lots, BigDecimal avgPrice) {
+            this.stockCode = stockCode;
+            this.totalLots = lots;
+            this.averagePrice = avgPrice;
+        }
+
+        public void add(int lots, BigDecimal avgPrice) {
+            int newTotalLots = this.totalLots + lots;
+            if (newTotalLots > 0) {
+                BigDecimal totalValA = BigDecimal.valueOf(this.totalLots).multiply(this.averagePrice);
+                BigDecimal totalValB = BigDecimal.valueOf(lots).multiply(avgPrice);
+                this.averagePrice = totalValA.add(totalValB).divide(BigDecimal.valueOf(newTotalLots), 4, RoundingMode.HALF_UP);
+            }
+            this.totalLots = newTotalLots;
+        }
+
+        public String getStockCode() { return stockCode; }
+        public int getTotalLots() { return totalLots; }
+        public BigDecimal getAveragePrice() { return averagePrice; }
+    }
+
     @GetMapping("/dashboard")
     public String showDashboard(Model model, Principal principal) {
         if (principal == null) {
@@ -45,7 +75,24 @@ public class DashboardController {
         }
         User user = userService.findByUsername(principal.getName()).orElseThrow();
         List<Portfolio> portfolios = portfolioRepository.findByUser(user);
+        
+        // Calculate consolidated portfolio summary
+        Map<String, CombinedItem> summaryMap = new HashMap<>();
+        for (Portfolio p : portfolios) {
+            for (PortfolioItem item : p.getItems()) {
+                String code = item.getStockCode().toUpperCase();
+                CombinedItem combined = summaryMap.get(code);
+                if (combined == null) {
+                    combined = new CombinedItem(code, item.getCurrentLots(), item.getCurrentAvgPrice());
+                    summaryMap.put(code, combined);
+                } else {
+                    combined.add(item.getCurrentLots(), item.getCurrentAvgPrice());
+                }
+            }
+        }
+        
         model.addAttribute("portfolios", portfolios);
+        model.addAttribute("summaryItems", new ArrayList<>(summaryMap.values()));
         model.addAttribute("username", user.getUsername());
         return "dashboard";
     }
