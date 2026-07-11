@@ -188,4 +188,36 @@ public class DashboardController {
         redirectAttributes.addFlashAttribute("successMsg", "Saham " + normalizedCode + " berhasil disimpan ke portfolio '" + portfolio.getName() + "'!");
         return "redirect:/dashboard";
     }
+
+    @PostMapping("/portfolio/item/update/{itemId}")
+    public String updatePortfolioItem(
+            @PathVariable Long itemId,
+            @RequestParam("currentLots") Integer currentLots,
+            @RequestParam("currentAvgPrice") BigDecimal currentAvgPrice,
+            Principal principal,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        if (currentLots == null || currentLots < 0) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Jumlah lot tidak valid");
+            return "redirect:/dashboard";
+        }
+        if (currentAvgPrice == null || currentAvgPrice.compareTo(BigDecimal.ZERO) < 0) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Harga rata-rata tidak valid");
+            return "redirect:/dashboard";
+        }
+
+        PortfolioItem item = portfolioItemRepository.findById(itemId).orElse(null);
+        if (item != null && item.getPortfolio().getUser().getUsername().equals(principal.getName())) {
+            item.setCurrentLots(currentLots);
+            item.setCurrentAvgPrice(currentAvgPrice);
+            portfolioItemRepository.save(item);
+            redirectAttributes.addFlashAttribute("successMsg", "Saham " + item.getStockCode() + " berhasil diperbarui!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMsg", "Saham tidak ditemukan atau akses ditolak");
+        }
+        return "redirect:/dashboard";
+    }
 }
