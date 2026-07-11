@@ -51,6 +51,7 @@ public class CalculatorController {
             @RequestParam(value = "stockCode", required = false) String stockCode,
             @RequestParam(value = "currentLots", required = false) Integer currentLots,
             @RequestParam(value = "currentAvgPrice", required = false) BigDecimal currentAvgPrice,
+            Principal principal,
             Model model
     ) {
         CalculatorForm form = new CalculatorForm();
@@ -64,6 +65,13 @@ public class CalculatorController {
             form.setCurrentAvgPrice(currentAvgPrice);
         }
         model.addAttribute("calculatorForm", form);
+        
+        if (principal != null) {
+            User user = userService.findByUsername(principal.getName()).orElse(null);
+            if (user != null) {
+                model.addAttribute("portfolios", portfolioRepository.findByUser(user));
+            }
+        }
         return "calculator";
     }
 
@@ -71,6 +79,7 @@ public class CalculatorController {
     public String calculateAverageDown(
             @Valid @ModelAttribute("calculatorForm") CalculatorForm form,
             BindingResult bindingResult,
+            Principal principal,
             Model model
     ) {
         // Cross-field validation for multi-step tranches
@@ -103,17 +112,31 @@ public class CalculatorController {
         }
 
         if (bindingResult.hasErrors()) {
+            if (principal != null) {
+                User user = userService.findByUsername(principal.getName()).orElse(null);
+                if (user != null) {
+                    model.addAttribute("portfolios", portfolioRepository.findByUser(user));
+                }
+            }
             return "calculator";
         }
 
         CalculatorResult result = calculatorService.calculate(form);
         model.addAttribute("result", result);
+        
+        if (principal != null) {
+            User user = userService.findByUsername(principal.getName()).orElse(null);
+            if (user != null) {
+                model.addAttribute("portfolios", portfolioRepository.findByUser(user));
+            }
+        }
         return "calculator";
     }
 
     @PostMapping("/portfolio/save")
     public String saveToPortfolio(
             @ModelAttribute CalculatorForm form,
+            @RequestParam(value = "portfolioId", required = false) Long portfolioId,
             Principal principal,
             RedirectAttributes redirectAttributes
     ) {
@@ -136,10 +159,17 @@ public class CalculatorController {
         String username = principal.getName();
         User user = userService.findByUsername(username).orElseThrow();
 
-        // Get or create first portfolio
-        Portfolio portfolio = portfolioRepository.findByUser(user).stream()
-                .findFirst()
-                .orElseGet(() -> portfolioRepository.save(new Portfolio("Portfolio Utama", user)));
+        Portfolio portfolio;
+        if (portfolioId != null) {
+            portfolio = portfolioRepository.findById(portfolioId)
+                    .filter(p -> p.getUser().getId().equals(user.getId()))
+                    .orElseGet(() -> portfolioRepository.save(new Portfolio("Portfolio Utama", user)));
+        } else {
+            // Get or create first portfolio
+            portfolio = portfolioRepository.findByUser(user).stream()
+                    .findFirst()
+                    .orElseGet(() -> portfolioRepository.save(new Portfolio("Portfolio Utama", user)));
+        }
 
         String normalizedCode = stockPriceService.normalizeTicker(form.getStockCode());
 
@@ -158,7 +188,7 @@ public class CalculatorController {
         item.setCurrentAvgPrice(form.getCurrentAvgPrice());
         portfolioItemRepository.save(item);
 
-        redirectAttributes.addFlashAttribute("successMsg", "Saham " + normalizedCode + " berhasil disimpan ke portfolio!");
+        redirectAttributes.addFlashAttribute("successMsg", "Saham " + normalizedCode + " berhasil disimpan ke portfolio '" + portfolio.getName() + "'!");
         return "redirect:/dashboard";
     }
 

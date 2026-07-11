@@ -33,7 +33,15 @@
         .font-display {
             font-family: 'Outfit', sans-serif;
         }
-    </style>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.calculatorData = {
+            mode: /*[[${calculatorForm.calculationMode}]]*/ 'LOT',
+            stockCode: /*[[${calculatorForm.stockCode}]]*/ '',
+            tranches: /*[[${calculatorForm.tranches}]]*/ []
+        };
+        /*]]>*/
+    </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
 
@@ -72,19 +80,15 @@
     <!-- Main Content -->
     <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8 md:py-12"
           x-data="{
-              mode: '[[${calculatorForm.calculationMode}]]',
-              stockCode: '[[${calculatorForm.stockCode}]]',
+              mode: window.calculatorData ? window.calculatorData.mode : 'LOT',
+              stockCode: window.calculatorData ? window.calculatorData.stockCode : '',
               loadingPrice: false,
               priceFetched: null,
-              tranches: [
-                  /*[# th:each="tranche, stat : ${calculatorForm.tranches}"]*/
-                  {
-                      buyPrice: '[[${tranche.buyPrice != null ? tranche.buyPrice : ''}]]',
-                      targetLots: '[[${tranche.targetLots != null ? tranche.targetLots : ''}]]',
-                      targetBudget: '[[${tranche.targetBudget != null ? tranche.targetBudget : ''}]]'
-                  }/*[# th:if="${!stat.last}"]*/, /*[/]*/
-                  /*[/]*/
-              ],
+              tranches: (window.calculatorData && window.calculatorData.tranches && window.calculatorData.tranches.length > 0) ? window.calculatorData.tranches.map(t => ({
+                  buyPrice: t.buyPrice !== null && t.buyPrice !== undefined ? t.buyPrice : '',
+                  targetLots: t.targetLots !== null && t.targetLots !== undefined ? t.targetLots : '',
+                  targetBudget: t.targetBudget !== null && t.targetBudget !== undefined ? t.targetBudget : ''
+              })) : [{ buyPrice: '', targetLots: '', targetBudget: '' }],
               init() {
                   if (this.tranches.length === 0) {
                       this.tranches.push({ buyPrice: '', targetLots: '', targetBudget: '' });
@@ -333,6 +337,15 @@
 
                     <!-- Main Buttons -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                        <!-- Select Portfolio Dropdown (Only if Authenticated) -->
+                        <div sec:authorize="isAuthenticated()" class="sm:col-span-2 bg-slate-950/60 p-4 border border-slate-800 rounded-xl space-y-2 mb-2">
+                            <label for="portfolioId" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Pilih Target Portofolio</label>
+                            <select id="portfolioId" name="portfolioId" class="w-full bg-slate-900 border border-slate-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-slate-200 text-sm transition outline-none">
+                                <option th:each="p : ${portfolios}" th:value="${p.id}" th:text="${p.name}"></option>
+                                <option th:if="${#lists.isEmpty(portfolios)}" value="" selected>Buat Portfolio Utama Otomatis</option>
+                            </select>
+                        </div>
+
                         <button type="submit" 
                                 class="w-full bg-indigo-600 hover:bg-indigo-500 focus:ring-4 focus:ring-indigo-800 text-white font-bold py-4 px-6 rounded-xl transition duration-300 transform active:scale-95 shadow-lg shadow-indigo-600/30 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

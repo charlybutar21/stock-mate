@@ -37,35 +37,53 @@ Unlike simple average-down calculators, Stock Mate integrates real-world constra
 
 Stock Mate uses a modern, lightweight, best-practice production stack:
 - **Backend**: Spring Boot 4.x / Java 21, Spring Security, Spring Data JPA
-- **Database**: H2 Database (File-persisted for local development)
+- **Database**: MySQL 8.0 (Containerized), H2 Database (In-Memory for unit tests)
 - **Frontend**: HTML5, Thymeleaf, Tailwind CSS (via CDN), Alpine.js
 - **Testing**: JUnit 5, Mockito, Spring Security Test
+- **Containerization**: Docker, Docker Compose
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Method A: Running with Docker Compose (Recommended)
+You can run the entire application stack including the application service and the MySQL database with a single command. 
+
+**Prerequisites:**
+- **Docker** and **Docker Compose** installed on your system.
+
+1. Start the stack from the project root:
+   ```bash
+   docker compose up --build -d
+   ```
+2. Once started, the application will automatically wait for the MySQL container to be healthy and then start up at:
+   👉 **[http://localhost:8080](http://localhost:8080)**
+
+3. To shut down the services and preserve database volume data:
+   ```bash
+   docker compose down
+   ```
+
+### Method B: Running Locally (Manual Development)
+
+**Prerequisites:**
 - **Java Development Kit (JDK)** version 21 or higher.
-- **Maven** (or use the included Maven wrapper `./mvnw`).
+- **MySQL** server running locally (or configured in `application.properties`).
 
-### 1. Run the Application
-Start the application using the Maven wrapper:
-```bash
-./mvnw spring-boot:run
-```
+1. Make sure you have a MySQL database named `stockmate` running, and your credentials match the default fallbacks in `application.properties` (User: `stockuser`, Pass: `stockpass`). Or configure them via environment variables:
+   ```bash
+   export DB_HOST=localhost
+   export DB_USER=my_db_user
+   export DB_PASSWORD=my_db_password
+   ```
 
-Once started, the application is available at:
-👉 **[http://localhost:8080](http://localhost:8080)**
+2. Start the application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
 
-### 2. Database & Console Access
-By default, the application is configured to run with a local file-based H2 database saved at `~/stockmate-db`. This ensures your portfolios persist across application restarts.
-
-To access the H2 database console:
-- **URL**: `http://localhost:8080/h2-console`
-- **JDBC URL**: `jdbc:h2:file:~/stockmate-db`
-- **Username**: `sa`
-- **Password**: *(leave blank)*
+3. Open the browser at:
+   👉 **[http://localhost:8080](http://localhost:8080)**
 
 ---
 
