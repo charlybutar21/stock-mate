@@ -1,11 +1,16 @@
 package com.stockmate.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CalculatorForm {
+
+    private String stockCode;
 
     @NotNull(message = "Jumlah lot saat ini tidak boleh kosong")
     @Min(value = 0, message = "Jumlah lot saat ini minimal 0")
@@ -15,18 +20,36 @@ public class CalculatorForm {
     @DecimalMin(value = "0.0", inclusive = true, message = "Harga rata-rata saat ini tidak boleh negatif")
     private BigDecimal currentAvgPrice = BigDecimal.ZERO;
 
-    @NotNull(message = "Harga beli baru tidak boleh kosong")
-    @DecimalMin(value = "0.01", inclusive = true, message = "Harga beli baru harus lebih besar dari 0")
-    private BigDecimal buyPrice;
-
     @NotNull(message = "Mode kalkulasi tidak boleh kosong")
     private String calculationMode = "LOT"; // "LOT" or "BUDGET"
 
-    private Integer targetLots;
+    @Valid
+    private List<TrancheForm> tranches = new ArrayList<>();
 
-    private BigDecimal targetBudget;
+    @NotNull(message = "Fee beli tidak boleh kosong")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Fee beli tidak boleh negatif")
+    private BigDecimal buyFeePercent = BigDecimal.valueOf(0.15); // Pre-fill 0.15%
 
-    // Getters and Setters
+    @NotNull(message = "Fee jual tidak boleh kosong")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Fee jual tidak boleh negatif")
+    private BigDecimal sellFeePercent = BigDecimal.valueOf(0.25); // Pre-fill 0.25%
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "Harga jual target tidak boleh negatif")
+    private BigDecimal targetSellPrice;
+
+    public CalculatorForm() {
+        // Initialize with at least one tranche
+        this.tranches.add(new TrancheForm());
+    }
+
+    public String getStockCode() {
+        return stockCode;
+    }
+
+    public void setStockCode(String stockCode) {
+        this.stockCode = stockCode;
+    }
+
     public Integer getCurrentLots() {
         return currentLots;
     }
@@ -43,14 +66,6 @@ public class CalculatorForm {
         this.currentAvgPrice = currentAvgPrice;
     }
 
-    public BigDecimal getBuyPrice() {
-        return buyPrice;
-    }
-
-    public void setBuyPrice(BigDecimal buyPrice) {
-        this.buyPrice = buyPrice;
-    }
-
     public String getCalculationMode() {
         return calculationMode;
     }
@@ -59,19 +74,35 @@ public class CalculatorForm {
         this.calculationMode = calculationMode;
     }
 
-    public Integer getTargetLots() {
-        return targetLots;
+    public List<TrancheForm> getTranches() {
+        return tranches;
     }
 
-    public void setTargetLots(Integer targetLots) {
-        this.targetLots = targetLots;
+    public void setTranches(List<TrancheForm> tranches) {
+        this.tranches = tranches;
     }
 
-    public BigDecimal getTargetBudget() {
-        return targetBudget;
+    public BigDecimal getBuyFeePercent() {
+        return buyFeePercent;
     }
 
-    public void setTargetBudget(BigDecimal targetBudget) {
-        this.targetBudget = targetBudget;
+    public void setBuyFeePercent(BigDecimal buyFeePercent) {
+        this.buyFeePercent = buyFeePercent;
+    }
+
+    public BigDecimal getSellFeePercent() {
+        return sellFeePercent;
+    }
+
+    public void setSellFeePercent(BigDecimal sellFeePercent) {
+        this.sellFeePercent = sellFeePercent;
+    }
+
+    public BigDecimal getTargetSellPrice() {
+        return targetSellPrice;
+    }
+
+    public void setTargetSellPrice(BigDecimal targetSellPrice) {
+        this.targetSellPrice = targetSellPrice;
     }
 }

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Stock Mate</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center space-x-2">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-600/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-indigo-200 bg-clip-text text-transparent">Stock Mate</span>
+            </a>
+            
+            <div class="flex items-center space-x-6">
+                <a href="/" class="text-sm font-medium text-slate-300 hover:text-slate-100 transition duration-200">Kalkulator</a>
+                <div class="flex items-center space-x-3 pl-4 border-l border-slate-800">
+                    <span class="text-sm text-slate-400">Halo, <strong class="text-indigo-400" th:text="${username}">User</strong></span>
+                    <form th:action="@{/logout}" method="POST" class="inline">
+                        <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition duration-200">Keluar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 py-10 w-full" x-data="{ showCreateModal: false }">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Portofolio Saya</h1>
+                <p class="text-slate-400 text-sm mt-1">Simpan dan pantau harga rata-rata saham Anda</p>
+            </div>
+            <button @click="showCreateModal = true"
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition duration-300 shadow-lg shadow-indigo-600/20 text-sm flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                <span>Buat Portfolio</span>
+            </button>
+        </div>
+
+        <!-- Feedback Alert Messages -->
+        <div th:if="${successMsg}" class="mb-6 p-4 rounded-xl bg-emerald-950/50 border border-emerald-800/50 text-emerald-300 text-sm flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span th:text="${successMsg}"></span>
+        </div>
+        <div th:if="${errorMsg}" class="mb-6 p-4 rounded-xl bg-red-950/50 border border-red-800/50 text-red-300 text-sm flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span th:text="${errorMsg}"></span>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(portfolios)}" class="bg-slate-900/40 border border-slate-800 rounded-2xl p-12 text-center">
+            <div class="bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-200">Belum ada portfolio</h3>
+            <p class="text-slate-400 text-sm mt-1 max-w-sm mx-auto">Anda belum membuat portfolio. Silakan buat portfolio baru untuk menyimpan skenario average down Anda.</p>
+            <button @click="showCreateModal = true"
+                    class="mt-4 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 font-semibold rounded-lg text-sm transition duration-200">
+                Buat Portfolio Sekarang
+            </button>
+        </div>
+
+        <!-- Portfolios Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" th:unless="${#lists.isEmpty(portfolios)}">
+            <div th:each="portfolio : ${portfolios}" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-slate-200" th:text="${portfolio.name}">Portfolio Name</h3>
+                        <form th:action="@{'/portfolio/delete/' + ${portfolio.id}}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus portfolio ini?')">
+                            <button type="submit" class="text-slate-500 hover:text-red-400 transition duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Items Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-300">
+                            <thead class="text-xs uppercase bg-slate-950/40 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th scope="col" class="py-2 px-3">Kode</th>
+                                    <th scope="col" class="py-2 px-3 text-right">Lot</th>
+                                    <th scope="col" class="py-2 px-3 text-right">Avg Price</th>
+                                    <th scope="col" class="py-2 px-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(portfolio.items)}" class="border-b border-slate-800/50">
+                                    <td colspan="4" class="py-4 px-3 text-center text-xs text-slate-500">
+                                        Belum ada saham. Simpan dari halaman kalkulator.
+                                    </td>
+                                </tr>
+                                <tr th:each="item : ${portfolio.items}" class="border-b border-slate-800/50 hover:bg-slate-800/20 transition duration-150">
+                                    <td class="py-3 px-3 font-semibold text-indigo-400" th:text="${item.stockCode}">BBCA.JK</td>
+                                    <td class="py-3 px-3 text-right" th:text="${item.currentLots}">10</td>
+                                    <td class="py-3 px-3 text-right" th:text="${#numbers.formatDecimal(item.currentAvgPrice, 1, 'POINT', 0, 'COMMA')}">10,000</td>
+                                    <td class="py-3 px-3 text-right flex justify-end space-x-2">
+                                        <!-- Analyze Button -->
+                                        <a th:href="@{/(stockCode=${item.stockCode}, currentLots=${item.currentLots}, currentAvgPrice=${item.currentAvgPrice})}"
+                                           class="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs font-semibold transition duration-200">
+                                            Analisis
+                                        </a>
+                                        <!-- Delete Item Button -->
+                                        <form th:action="@{'/portfolio/item/delete/' + ${item.id}}" method="POST" class="inline">
+                                            <button type="submit" class="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition duration-200">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-800/60 text-right">
+                    <span class="text-xs text-slate-500" th:text="${#lists.size(portfolio.items)} + ' Saham disimpan'">0 Saham</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Portfolio Modal -->
+        <div class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+             x-show="showCreateModal" x-transition
+             style="display: none;">
+            <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-6 shadow-2xl relative" @click.away="showCreateModal = false">
+                <button @click="showCreateModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold text-slate-100 mb-4">Buat Portfolio Baru</h3>
+                <form th:action="@{/portfolio/create}" method="POST" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Nama Portfolio</label>
+                        <input type="text" id="name" name="name" required
+                               class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 transition duration-200 outline-none"
+                               placeholder="Contoh: Saham Bluechip, Midcap">
+                    </div>
+                    <button type="submit"
+                            class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition duration-300">
+                        Buat Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Stock Mate. Crafted for smart retail investors.</p>
+    </footer>
+
+</body>
+</html>
