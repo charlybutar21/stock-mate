@@ -1,10 +1,16 @@
 package com.stockmate.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "portfolio_items")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PortfolioItem {
 
     @Id
@@ -24,52 +30,7 @@ public class PortfolioItem {
     @JoinColumn(name = "portfolio_id", nullable = false)
     private Portfolio portfolio;
 
-    public PortfolioItem() {}
-
-    public PortfolioItem(String stockCode, Integer currentLots, BigDecimal currentAvgPrice, Portfolio portfolio) {
-        this.stockCode = stockCode;
-        this.currentLots = currentLots;
-        this.currentAvgPrice = currentAvgPrice;
-        this.portfolio = portfolio;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getStockCode() {
-        return stockCode;
-    }
-
     public void setStockCode(String stockCode) {
         this.stockCode = stockCode != null ? stockCode.toUpperCase() : null;
-    }
-
-    public Integer getCurrentLots() {
-        return currentLots;
-    }
-
-    public void setCurrentLots(Integer currentLots) {
-        this.currentLots = currentLots;
-    }
-
-    public BigDecimal getCurrentAvgPrice() {
-        return currentAvgPrice;
-    }
-
-    public void setCurrentAvgPrice(BigDecimal currentAvgPrice) {
-        this.currentAvgPrice = currentAvgPrice;
-    }
-
-    public Portfolio getPortfolio() {
-        return portfolio;
-    }
-
-    public void setPortfolio(Portfolio portfolio) {
-        this.portfolio = portfolio;
     }
 }

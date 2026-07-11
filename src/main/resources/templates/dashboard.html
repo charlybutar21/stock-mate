@@ -35,7 +35,8 @@
             </a>
             
             <div class="flex items-center space-x-6">
-                <div class="flex items-center space-x-3 pl-4">
+
+                <div class="flex items-center space-x-3 pl-4 border-l border-slate-800">
                     <span class="text-sm text-slate-400">Halo, <strong class="text-indigo-400" th:text="${username}">User</strong></span>
                     <form th:action="@{/logout}" method="POST" class="inline">
                         <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition duration-200">Keluar</button>
@@ -112,6 +113,7 @@
                             <th scope="col" class="py-3 px-4">Kode Saham</th>
                             <th scope="col" class="py-3 px-4 text-right">Total Lot</th>
                             <th scope="col" class="py-3 px-4 text-right">Weighted Avg Price</th>
+                            <th scope="col" class="py-3 px-4 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,6 +121,12 @@
                             <td class="py-3.5 px-4 font-semibold text-indigo-400" th:text="${item.stockCode}">BBCA.JK</td>
                             <td class="py-3.5 px-4 text-right text-slate-200" th:text="${item.totalLots}">100</td>
                             <td class="py-3.5 px-4 text-right text-slate-200" th:text="'Rp ' + ${#numbers.formatDecimal(item.averagePrice, 1, 'POINT', 2, 'COMMA')}">Rp 10.000,00</td>
+                            <td class="py-3.5 px-4 text-right">
+                                <a th:href="@{/(stockCode=${item.stockCode}, currentLots=${item.totalLots}, currentAvgPrice=${item.averagePrice})}"
+                                   class="inline-block px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition duration-200 shadow-md shadow-indigo-600/10">
+                                    Analisis Konsolidasi
+                                </a>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -194,6 +202,12 @@
                                     
                                     <!-- Actions Column -->
                                     <td class="py-3 px-3 text-right flex justify-end space-x-2">
+                                        <!-- Analyze Button (when not editing) -->
+                                        <a x-show="!editing" th:href="@{/(stockCode=${item.stockCode}, currentLots=${item.currentLots}, currentAvgPrice=${item.currentAvgPrice})}"
+                                           class="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs font-semibold transition duration-200">
+                                            Analisis
+                                        </a>
+
                                         <!-- Edit Button -->
                                         <button x-show="!editing" @click="editing = true"
                                                 class="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs font-semibold transition duration-200">

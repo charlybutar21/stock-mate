@@ -1,11 +1,17 @@
 package com.stockmate.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -18,45 +24,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Portfolio> portfolios = new ArrayList<>();
-
-    public User() {}
 
     public User(String username, String password) {
         this.username = username;
         this.password = password;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public List<Portfolio> getPortfolios() {
-        return portfolios;
-    }
-
-    public void setPortfolios(List<Portfolio> portfolios) {
-        this.portfolios = portfolios;
     }
 }

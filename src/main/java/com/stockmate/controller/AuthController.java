@@ -1,6 +1,9 @@
 package com.stockmate.controller;
 
 import com.stockmate.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,15 +11,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
+@RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Endpoints for user login and registration")
 public class AuthController {
 
     private final UserService userService;
 
-    public AuthController(UserService userService) {
-        this.userService = userService;
-    }
-
     @GetMapping("/login")
+    @Operation(summary = "Show Login", description = "Displays the login page")
     public String login(@RequestParam(value = "error", required = false) String error, Model model) {
         if (error != null) {
             model.addAttribute("errorMsg", "Username atau password salah");
@@ -25,11 +27,13 @@ public class AuthController {
     }
 
     @GetMapping("/register")
+    @Operation(summary = "Show Registration", description = "Displays the registration page")
     public String showRegistrationForm() {
         return "register";
     }
 
     @PostMapping("/register")
+    @Operation(summary = "Register User", description = "Registers a new user in the system")
     public String registerUser(
             @RequestParam("username") String username,
             @RequestParam("password") String password,
