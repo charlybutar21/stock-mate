@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Mate - Kalkulator Average Down</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-600/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-indigo-200 bg-clip-text text-transparent">Stock Mate</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8 md:py-12">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-3 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                Kalkulator Average Down Saham
+            </h1>
+            <p class="text-slate-400 leading-relaxed text-sm md:text-base">
+                Simulasikan penurunan harga rata-rata saham Anda dengan memasukkan jumlah lot atau nominal budget dana yang ingin Anda belanjakan.
+            </p>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+             x-data="{ mode: '[[${calculatorForm.calculationMode}]]' }" x-cloak>
+            
+            <!-- Left Panel: Calculator Form -->
+            <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-md">
+                <form th:action="@{/}" th:object="${calculatorForm}" method="post" class="space-y-6">
+                    
+                    <!-- Hidden field to bind with Spring Boot model -->
+                    <input type="hidden" th:field="*{calculationMode}" x-ref="modeInput" />
+
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center border-b border-slate-800 pb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h25a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v2a1 1 0 102 0V9z" clip-rule="evenodd"/>
+                        </svg>
+                        Portfolio Saat Ini
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Current Lots -->
+                        <div>
+                            <label for="currentLots" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Jumlah Lot Sekarang</label>
+                            <div class="relative">
+                                <input type="number" th:field="*{currentLots}" id="currentLots" 
+                                       class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-700 transition"
+                                       placeholder="Contoh: 10" min="0">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1.5">1 Lot = 100 Lembar Saham</p>
+                            <span class="text-xs text-red-500 mt-1 block" th:if="${#fields.hasErrors('currentLots')}" th:errors="*{currentLots}"></span>
+                        </div>
+
+                        <!-- Current Average Price -->
+                        <div>
+                            <label for="currentAvgPrice" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Harga Rata-Rata (Avg)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-3.5 text-slate-600 text-sm font-semibold select-none">Rp</span>
+                                <input type="number" step="any" th:field="*{currentAvgPrice}" id="currentAvgPrice" 
+                                       class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-10 pr-4 py-3 text-slate-200 placeholder-slate-700 transition"
+                                       placeholder="Contoh: 1500" min="0">
+                            </div>
+                            <span class="text-xs text-red-500 mt-1 block" th:if="${#fields.hasErrors('currentAvgPrice')}" th:errors="*{currentAvgPrice}"></span>
+                        </div>
+                    </div>
+
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center border-b border-slate-800 pb-3 pt-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 00-2 2v4a2 2 0 002 2h10a2 2 0 002-2v-4a2 2 0 00-2-2H6zm3 2a1 1 0 100 2h3a1 1 0 100-2H9z" clip-rule="evenodd"/>
+                        </svg>
+                        Simulasi Pembelian Baru
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Buy Price -->
+                        <div>
+                            <label for="buyPrice" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Harga Beli Baru</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-3.5 text-slate-600 text-sm font-semibold select-none">Rp</span>
+                                <input type="number" step="any" th:field="*{buyPrice}" id="buyPrice" 
+                                       class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-10 pr-4 py-3 text-slate-200 placeholder-slate-700 transition"
+                                       placeholder="Contoh: 1200" required>
+                            </div>
+                            <span class="text-xs text-red-500 mt-1 block" th:if="${#fields.hasErrors('buyPrice')}" th:errors="*{buyPrice}"></span>
+                        </div>
+
+                        <!-- Switch Mode (Lot vs Budget Tabs) -->
+                        <div>
+                            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pilih Mode Pembelian</span>
+                            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-850">
+                                <button type="button" 
+                                        @click="mode = 'LOT'; $refs.modeInput.value = 'LOT'"
+                                        :class="mode === 'LOT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                                        class="py-2 text-xs font-semibold rounded-lg transition-all duration-200">
+                                    Beli per Lot
+                                </button>
+                                <button type="button" 
+                                        @click="mode = 'BUDGET'; $refs.modeInput.value = 'BUDGET'"
+                                        :class="mode === 'BUDGET' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                                        class="py-2 text-xs font-semibold rounded-lg transition-all duration-200">
+                                    Beli per Budget
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Input based on Mode -->
+                    <div class="pt-2">
+                        <!-- Target Lots Input (Mode: LOT) -->
+                        <div x-show="mode === 'LOT'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0">
+                            <label for="targetLots" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Jumlah Lot yang Mau Dibeli</label>
+                            <input type="number" th:field="*{targetLots}" id="targetLots" 
+                                   class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-700 transition"
+                                   placeholder="Masukkan jumlah lot, misal: 5">
+                            <span class="text-xs text-red-500 mt-1 block" th:if="${#fields.hasErrors('targetLots')}" th:errors="*{targetLots}"></span>
+                        </div>
+
+                        <!-- Target Budget Input (Mode: BUDGET) -->
+                        <div x-show="mode === 'BUDGET'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" style="display: none;">
+                            <label for="targetBudget" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nominal Budget Dana</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-3.5 text-slate-600 text-sm font-semibold select-none">Rp</span>
+                                <input type="number" step="any" th:field="*{targetBudget}" id="targetBudget" 
+                                       class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-10 pr-4 py-3 text-slate-200 placeholder-slate-700 transition"
+                                       placeholder="Masukkan total dana, misal: 500000">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1.5">Sistem akan otomatis menghitung lot terbanyak yang bisa dibeli.</p>
+                            <span class="text-xs text-red-500 mt-1 block" th:if="${#fields.hasErrors('targetBudget')}" th:errors="*{targetBudget}"></span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" 
+                            class="w-full bg-indigo-600 hover:bg-indigo-500 focus:ring-4 focus:ring-indigo-800 text-white font-bold py-4 px-6 rounded-xl transition duration-300 transform active:scale-95 shadow-lg shadow-indigo-600/30 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        Hitung Average Down
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Panel: Results View -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- If no calculation result yet -->
+                <div th:if="${result == null}" class="bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center min-h-[350px]">
+                    <div class="w-16 h-16 bg-slate-850 rounded-full flex items-center justify-center text-slate-500 mb-4 border border-slate-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-6 4h6m-6 4h6M11 3a9 9 0 11-9 9 9 9 0 019-9z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-300 mb-1">Menunggu Input Anda</h3>
+                    <p class="text-slate-500 text-sm max-w-[280px]">Isi detail data portfolio Anda di panel kiri dan klik tombol Hitung.</p>
+                </div>
+
+                <!-- If result is present -->
+                <div th:if="${result != null}" 
+                     class="bg-slate-900 border border-indigo-500/30 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden transition-all duration-300">
+                    
+                    <!-- Glow effect -->
+                    <div class="absolute -right-24 -top-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -left-24 -bottom-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <h2 class="text-lg font-semibold text-slate-200 border-b border-slate-800 pb-3 mb-6 flex justify-between items-center">
+                        <span>Hasil Simulasi</span>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-850">Sukses</span>
+                    </h2>
+
+                    <!-- Hero metric: New Avg Price -->
+                    <div class="mb-8">
+                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Harga Rata-Rata Baru</span>
+                        <div class="flex items-baseline space-x-3">
+                            <span class="text-3xl md:text-4xl font-extrabold text-emerald-400" 
+                                  th:text="'Rp' + ${#numbers.formatDecimal(result.newAvgPrice, 1, 'POINT', 0, 'COMMA')}">
+                                Rp0
+                            </span>
+                            <!-- Drop Badge -->
+                            <div th:if="${result.avgDropPercentage.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                 class="flex items-center space-x-1 bg-emerald-950/80 border border-emerald-800 text-emerald-400 px-2 py-1 rounded-lg text-xs font-bold">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                <span th:text="'-' + ${#numbers.formatDecimal(result.avgDropPercentage, 1, 2)} + '%'">-0%</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">
+                            Turun dari harga rata-rata awal <strong class="text-slate-400" th:text="'Rp' + ${#numbers.formatDecimal(calculatorForm.currentAvgPrice, 1, 'POINT', 0, 'COMMA')}">Rp0</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Details Table -->
+                    <div class="space-y-4 text-sm border-t border-slate-800 pt-6">
+                        <!-- Total Lots after purchase -->
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400">Total Kepemilikan Lot</span>
+                            <span class="font-semibold text-slate-200" th:text="${result.totalLots} + ' Lot'">0 Lot</span>
+                        </div>
+
+                        <!-- Lots Bought -->
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400">Lot yang Dibeli Baru</span>
+                            <span class="font-semibold text-slate-200" th:text="'+' + ${result.lotsBought} + ' Lot'">0 Lot</span>
+                        </div>
+
+                        <!-- Capital Spent -->
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400">Modal Pembelian Baru</span>
+                            <span class="font-semibold text-slate-200" 
+                                  th:text="'Rp' + ${#numbers.formatDecimal(result.capitalSpent, 1, 'POINT', 0, 'COMMA')}">
+                                Rp0
+                            </span>
+                        </div>
+
+                        <!-- Remaining Budget (only show if greater than 0) -->
+                        <div th:if="${result.leftoverBudget.compareTo(T(java.math.BigDecimal).ZERO) > 0}" 
+                             class="flex justify-between items-center py-1 text-slate-400 bg-slate-850/30 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400">Sisa Dana Budget</span>
+                            <span class="font-semibold text-emerald-400" 
+                                  th:text="'Rp' + ${#numbers.formatDecimal(result.leftoverBudget, 1, 'POINT', 0, 'COMMA')}">
+                                Rp0
+                            </span>
+                        </div>
+
+                        <!-- Total Capital invested -->
+                        <div class="flex justify-between items-center py-2 border-t border-slate-850 mt-2">
+                            <span class="text-slate-300 font-medium">Total Nilai Investasi</span>
+                            <span class="font-bold text-slate-100" 
+                                  th:text="'Rp' + ${#numbers.formatDecimal(result.totalCapital, 1, 'POINT', 0, 'COMMA')}">
+                                Rp0
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-600">
+        <div class="max-w-6xl mx-auto px-4">
+            <p class="mb-1">&copy; 2026 Stock Mate. All rights reserved.</p>
+            <p>Didesain untuk membantu kalkulasi investasi dengan aman dan presisi.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
