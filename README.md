@@ -1,6 +1,6 @@
 # 📈 Stock Mate - Smart Average Down Planner
 
-**Stock Mate** is a premium web application engineered to help retail investors plan, calculate, and manage their stock average-down strategies with maximum mathematical precision. Built on a robust Spring Boot framework and Java 21, it delivers a modern, responsive, dark-themed UI.
+**Stock Mate** is a web application engineered to help retail investors plan, calculate, and manage their stock average-down strategies with maximum mathematical precision. Built on a robust Spring Boot framework and Java 21, it delivers a modern, responsive, dark-themed UI.
 
 Unlike simple average-down calculators, Stock Mate integrates real-world constraints such as broker commission fees, multi-step transaction laddering, target-price profit simulators (Take Profit), and multi-portfolio persistence using a clean, well-documented architecture.
 
